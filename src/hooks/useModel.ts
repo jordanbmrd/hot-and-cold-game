@@ -13,9 +13,10 @@ export function useModel() {
 
     async function load() {
       try {
+        const base = import.meta.env.BASE_URL;
         const [wordsRes, vecRes] = await Promise.all([
-          fetch("/data/words.json"),
-          fetch("/data/vectors.bin"),
+          fetch(`${base}data/words.json`),
+          fetch(`${base}data/vectors.bin`),
         ]);
 
         if (!wordsRes.ok || !vecRes.ok) {
