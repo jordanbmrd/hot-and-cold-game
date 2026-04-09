@@ -22,4 +22,5 @@ export interface GameModel {
   dailyWordIndex: number;
   top1000Indices: number[];
   top1000Sims: Float32Array;
+  ranks: Uint32Array; // index mot -> rang global par similarité (0 = cible)
 }

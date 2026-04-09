@@ -35,5 +35,4 @@ Thumbs.db
 # Others
 .npmrc.*
 .npmrc
-setup-desyre-artifactory.js
 /data

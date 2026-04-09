@@ -26,7 +26,7 @@ export function computeTop1000(
   vectors: Float32Array,
   targetIdx: number,
   vocabSize: number
-): { indices: number[]; similarities: Float32Array } {
+): { indices: number[]; similarities: Float32Array; ranks: Uint32Array } {
   const targetOffset = targetIdx * DIMS;
   const scores = new Float32Array(vocabSize);
 
@@ -43,6 +43,12 @@ export function computeTop1000(
   const allIndices = Array.from({ length: vocabSize }, (_, i) => i);
   allIndices.sort((a, b) => scores[b] - scores[a]);
 
+  // Rang global (0 = mot cible, 1 = voisin le plus proche, etc.)
+  const ranks = new Uint32Array(vocabSize);
+  for (let rank = 0; rank < allIndices.length; rank++) {
+    ranks[allIndices[rank]] = rank;
+  }
+
   // Le premier est le mot lui-même (score ≈ 1.0), on le garde
   const top = allIndices.slice(0, 1001);
   const topSims = new Float32Array(1001);
@@ -50,7 +56,7 @@ export function computeTop1000(
     topSims[i] = scores[top[i]];
   }
 
-  return { indices: top, similarities: topSims };
+  return { indices: top, similarities: topSims, ranks };
 }
 
 /**

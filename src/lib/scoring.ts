@@ -16,22 +16,17 @@ export interface ScoreResult {
 export function computeScore(
   guessIdx: number,
   targetIdx: number,
-  top1000Indices: number[],
   top1000Sims: Float32Array,
-  vectors: Float32Array
+  vectors: Float32Array,
+  ranks: Uint32Array
 ): ScoreResult {
-  if (guessIdx === targetIdx) {
+  const rank = ranks[guessIdx];
+
+  if (rank === 0) {
     return { score: 100, rank: 0, isWin: true };
   }
 
-  const rankInTop = top1000Indices.indexOf(guessIdx);
-
-  if (rankInTop >= 0 && rankInTop < 1001) {
-    // rank 0 = le mot lui-même, rank 1 = plus proche voisin
-    const rank = rankInTop;
-    if (rank === 0) {
-      return { score: 100, rank: 0, isWin: true };
-    }
+  if (rank > 0 && rank < 1001) {
     // rank 1 → 99, rank 1000 → 30
     const score = Math.round(99 - ((rank - 1) * 69) / 999);
     return { score, rank, isWin: false };
@@ -49,7 +44,7 @@ export function computeScore(
   const ratio = Math.max(0, similarity / boundarySim);
   const score = Math.min(29, Math.round(ratio * 29));
 
-  return { score, rank: null, isWin: false };
+  return { score, rank, isWin: false };
 }
 
 /**

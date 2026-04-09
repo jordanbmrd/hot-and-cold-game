@@ -28,9 +28,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: |
-          sed -i 's|https://artifactory.dt.renault.com/artifactory/api/npm/npm-transverse/|https://registry.npmjs.org/|g' package-lock.json
-          npm ci --registry https://registry.npmjs.org
+        run: npm ci
 
       - name: Build
         run: npm run build

@@ -14,9 +14,10 @@ export function useModel() {
     async function load() {
       try {
         const base = import.meta.env.BASE_URL;
-        const [wordsRes, vecRes] = await Promise.all([
+        const [wordsRes, vecRes, targetsRes] = await Promise.all([
           fetch(`${base}data/words.json`),
           fetch(`${base}data/vectors.bin`),
+          fetch(`${base}data/targets.json`),
         ]);
 
         if (!wordsRes.ok || !vecRes.ok) {
@@ -26,6 +27,14 @@ export function useModel() {
         const words: string[] = await wordsRes.json();
         const buffer = await vecRes.arrayBuffer();
         const vectors = new Float32Array(buffer);
+
+        // Mots cibles (fallback : tout le vocabulaire si targets.json absent)
+        let targets: number[];
+        if (targetsRes.ok) {
+          targets = await targetsRes.json();
+        } else {
+          targets = Array.from({ length: words.length }, (_, i) => i);
+        }
 
         // Vérification d'intégrité
         const expected = words.length * DIMS;
@@ -49,11 +58,11 @@ export function useModel() {
           }
         });
 
-        // Mot du jour
-        const dailyWordIndex = await getDailyWordIndex(words.length);
+        // Mot du jour (pioche parmi les cibles curées)
+        const dailyWordIndex = await getDailyWordIndex(targets);
 
         // Top 1000 voisins
-        const { indices, similarities } = computeTop1000(
+        const { indices, similarities, ranks } = computeTop1000(
           vectors,
           dailyWordIndex,
           words.length
@@ -70,6 +79,7 @@ export function useModel() {
           dailyWordIndex,
           top1000Indices: indices,
           top1000Sims: similarities,
+          ranks,
         });
       } catch (err) {
         if (!cancelled) {

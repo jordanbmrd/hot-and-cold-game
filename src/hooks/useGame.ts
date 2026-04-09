@@ -97,9 +97,9 @@ export function useGame(model: GameModel | null) {
       const result = computeScore(
         guessIdx,
         model.dailyWordIndex,
-        model.top1000Indices,
         model.top1000Sims,
-        model.vectors
+        model.vectors,
+        model.ranks
       );
 
       dispatch({

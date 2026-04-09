@@ -76,7 +76,8 @@ export function HowToPlayDialog({ open, onOpenChange }: HowToPlayDialogProps) {
             proches, son rang sera affiché.
           </p>
           <p className="text-muted-foreground">
-            Le mot change tous les jours à minuit UTC.
+            Le mot secret est toujours un mot courant (nom, adjectif, verbe
+            à l'infinitif…). Il change tous les jours à minuit UTC.
           </p>
         </div>
       </DialogContent>
