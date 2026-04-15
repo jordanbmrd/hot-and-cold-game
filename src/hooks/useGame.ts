@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useCallback } from "react";
+import { useReducer, useEffect, useCallback, useState } from "react";
 import type { GameState, GuessResult, GameModel } from "@/types/game";
 import { saveState, loadState } from "@/lib/storage";
 import { getTodayUTC } from "@/lib/dailyWord";
@@ -26,9 +26,11 @@ function gameReducer(state: GameState, action: GameAction): GameState {
     case "ADD_GUESS": {
       const guess = action.payload;
       if (state.guesses.some((g) => g.word === guess.word)) return state;
-      const guesses = [...state.guesses, guess].sort(
-        (a, b) => b.score - a.score
-      );
+      const guesses = [...state.guesses, guess].sort((a, b) => {
+        const rankA = a.rank ?? Infinity;
+        const rankB = b.rank ?? Infinity;
+        return rankA - rankB;
+      });
       return {
         ...state,
         guesses,
@@ -48,6 +50,30 @@ export type SubmitResult =
 
 export function useGame(model: GameModel | null) {
   const [state, dispatch] = useReducer(gameReducer, undefined, initialState);
+  // Tracks how far we've walked into top-1000 for hints (starts at rank 1000, goes to rank 1)
+  // Persisted in localStorage so progress survives page refreshes within the same day
+  const today = getTodayUTC();
+  const [hintRank, setHintRank] = useState<number>(() => {
+    try {
+      const raw = localStorage.getItem("chaud-froid-hint-rank");
+      if (!raw) return 1000;
+      const parsed = JSON.parse(raw) as { date: string; rank: number };
+      return parsed.date === today ? parsed.rank : 1000;
+    } catch {
+      return 1000;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "chaud-froid-hint-rank",
+        JSON.stringify({ date: today, rank: hintRank })
+      );
+    } catch {
+      // ignore storage errors
+    }
+  }, [hintRank, today]);
 
   // Hydratation depuis localStorage au montage
   useEffect(() => {
@@ -118,5 +144,25 @@ export function useGame(model: GameModel | null) {
     [model, state.guesses]
   );
 
-  return { state, submitGuess };
+  /**
+   * Returns the next hint word from the top-1000 list (progressively closer
+   * to the target with each call). Returns null when all hints are exhausted.
+   */
+  const getHint = useCallback((): string | null => {
+    if (!model || hintRank < 1) return null;
+    const guessedWords = new Set(state.guesses.map((g) => g.word));
+
+    for (let r = hintRank; r >= 1; r--) {
+      const idx = model.top1000Indices[r];
+      if (idx === undefined) continue;
+      const word = model.words[idx];
+      if (!guessedWords.has(word)) {
+        setHintRank(r - 1);
+        return word;
+      }
+    }
+    return null;
+  }, [model, state.guesses, hintRank]);
+
+  return { state, submitGuess, getHint };
 }
