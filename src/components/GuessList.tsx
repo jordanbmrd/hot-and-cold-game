@@ -18,8 +18,12 @@ export function GuessList({ guesses, attemptCount }: GuessListProps) {
     );
   }
 
-  // Le dernier ajouté (par timestamp) pour l'animation
+  // Le dernier ajouté (par timestamp) — épinglé en haut
   const latestTimestamp = Math.max(...guesses.map((g) => g.timestamp));
+  const latestGuess = guesses.find((g) => g.timestamp === latestTimestamp);
+  const otherGuesses = guesses.filter((g) => g.timestamp !== latestTimestamp);
+
+  if (!latestGuess) return null;
 
   return (
     <div className="space-y-1">
@@ -32,16 +36,25 @@ export function GuessList({ guesses, attemptCount }: GuessListProps) {
           {guesses.length > 1 ? "s" : ""}
         </p>
       </div>
-      <Separator />
-      <div className="divide-y divide-border">
-        {guesses.map((guess) => (
-          <GuessRow
-            key={guess.word}
-            guess={guess}
-            isNew={guess.timestamp === latestTimestamp}
-          />
-        ))}
+
+      {/* Dernier essai épinglé en haut */}
+      <div className="rounded-lg border border-border bg-muted/40 px-2 py-1 mb-1">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
+          Dernier essai
+        </p>
+        <GuessRow guess={latestGuess} isNew />
       </div>
+
+      {otherGuesses.length > 0 && (
+        <>
+          <Separator />
+          <div className="divide-y divide-border">
+            {otherGuesses.map((guess) => (
+              <GuessRow key={guess.word} guess={guess} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
