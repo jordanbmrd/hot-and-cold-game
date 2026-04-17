@@ -117,26 +117,20 @@ export function useGame(model: GameModel | null) {
         }
       }
 
-      // Si non trouvé ou si le mot se termine par 's', tenter la forme singulière
+      // Normalisation du pluriel : si le mot se termine par 's' et que la forme
+      // singulière existe dans le vocabulaire, on lui préfère le singulier pour
+      // garantir un score cohérent (ex. 'problématiques' → 'problématique').
       if (word.endsWith("s")) {
         const singular = word.slice(0, -1);
-        const singularIdx = model.wordIndex.get(singular);
-        if (singularIdx !== undefined && (guessIdx === undefined || singularIdx !== guessIdx)) {
+        let singularIdx = model.wordIndex.get(singular);
+        if (singularIdx === undefined) {
+          singularIdx = model.strippedIndex.get(stripAccents(singular));
+        }
+        if (singularIdx !== undefined) {
           guessIdx = singularIdx;
-          resolvedWord = singular;
+          resolvedWord = model.words[singularIdx];
           if (state.guesses.some((g) => g.word === resolvedWord)) {
             return { ok: false, error: "already_guessed" };
-          }
-        } else if (singularIdx === undefined) {
-          // Essayer également sans accents sur la forme singulière
-          const strippedSingular = stripAccents(singular);
-          const strippedSingularIdx = model.strippedIndex.get(strippedSingular);
-          if (strippedSingularIdx !== undefined && (guessIdx === undefined || strippedSingularIdx !== guessIdx)) {
-            guessIdx = strippedSingularIdx;
-            resolvedWord = model.words[strippedSingularIdx];
-            if (state.guesses.some((g) => g.word === resolvedWord)) {
-              return { ok: false, error: "already_guessed" };
-            }
           }
         }
       }
