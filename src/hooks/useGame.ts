@@ -100,7 +100,8 @@ export function useGame(model: GameModel | null) {
         return { ok: false, error: "already_guessed" };
       }
 
-      // Chercher le mot : d'abord exact, puis sans accents
+      // Chercher le mot : d'abord exact, puis sans accents,
+      // puis en normalisant le pluriel (suppression du 's' final)
       let guessIdx = model.wordIndex.get(word);
       let resolvedWord = word;
 
@@ -112,6 +113,30 @@ export function useGame(model: GameModel | null) {
           // Vérifier le doublon avec le mot résolu
           if (state.guesses.some((g) => g.word === resolvedWord)) {
             return { ok: false, error: "already_guessed" };
+          }
+        }
+      }
+
+      // Si non trouvé ou si le mot se termine par 's', tenter la forme singulière
+      if (word.endsWith("s")) {
+        const singular = word.slice(0, -1);
+        const singularIdx = model.wordIndex.get(singular);
+        if (singularIdx !== undefined && (guessIdx === undefined || singularIdx !== guessIdx)) {
+          guessIdx = singularIdx;
+          resolvedWord = singular;
+          if (state.guesses.some((g) => g.word === resolvedWord)) {
+            return { ok: false, error: "already_guessed" };
+          }
+        } else if (singularIdx === undefined) {
+          // Essayer également sans accents sur la forme singulière
+          const strippedSingular = stripAccents(singular);
+          const strippedSingularIdx = model.strippedIndex.get(strippedSingular);
+          if (strippedSingularIdx !== undefined && (guessIdx === undefined || strippedSingularIdx !== guessIdx)) {
+            guessIdx = strippedSingularIdx;
+            resolvedWord = model.words[strippedSingularIdx];
+            if (state.guesses.some((g) => g.word === resolvedWord)) {
+              return { ok: false, error: "already_guessed" };
+            }
           }
         }
       }
