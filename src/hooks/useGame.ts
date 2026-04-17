@@ -50,17 +50,17 @@ export type SubmitResult =
 
 export function useGame(model: GameModel | null) {
   const [state, dispatch] = useReducer(gameReducer, undefined, initialState);
-  // Tracks how far we've walked into top-1000 for hints (starts at rank 1000, goes to rank 1)
+  // Tracks how far we've walked into top-50 for hints (starts at rank 50, goes to rank 1)
   // Persisted in localStorage so progress survives page refreshes within the same day
   const today = getTodayUTC();
   const [hintRank, setHintRank] = useState<number>(() => {
     try {
       const raw = localStorage.getItem("chaud-froid-hint-rank");
-      if (!raw) return 1000;
+      if (!raw) return 50;
       const parsed = JSON.parse(raw) as { date: string; rank: number };
-      return parsed.date === today ? parsed.rank : 1000;
+      return parsed.date === today ? parsed.rank : 50;
     } catch {
-      return 1000;
+      return 50;
     }
   });
 
@@ -145,7 +145,7 @@ export function useGame(model: GameModel | null) {
   );
 
   /**
-   * Returns the next hint word from the top-1000 list (progressively closer
+   * Returns the next hint word from the top-50 list (progressively closer
    * to the target with each call). Returns null when all hints are exhausted.
    */
   const getHint = useCallback((): string | null => {

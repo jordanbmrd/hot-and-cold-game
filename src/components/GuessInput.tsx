@@ -13,6 +13,7 @@ export function GuessInput({ onGuess, disabled }: GuessInputProps) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastSubmitted = useRef<string>("");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,6 +25,7 @@ export function GuessInput({ onGuess, disabled }: GuessInputProps) {
     const result = onGuess(word);
 
     if (result.ok) {
+      lastSubmitted.current = word;
       setValue("");
     } else {
       switch (result.error) {
@@ -51,6 +53,12 @@ export function GuessInput({ onGuess, disabled }: GuessInputProps) {
           onChange={(e) => {
             setValue(e.target.value);
             setError(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowUp" && lastSubmitted.current) {
+              e.preventDefault();
+              setValue(lastSubmitted.current);
+            }
           }}
           placeholder="Proposez un mot..."
           disabled={disabled}
