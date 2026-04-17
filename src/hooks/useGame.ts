@@ -100,7 +100,8 @@ export function useGame(model: GameModel | null) {
         return { ok: false, error: "already_guessed" };
       }
 
-      // Chercher le mot : d'abord exact, puis sans accents
+      // Chercher le mot : d'abord exact, puis sans accents,
+      // puis en normalisant le pluriel (suppression du 's' final)
       let guessIdx = model.wordIndex.get(word);
       let resolvedWord = word;
 
@@ -110,6 +111,24 @@ export function useGame(model: GameModel | null) {
         if (guessIdx !== undefined) {
           resolvedWord = model.words[guessIdx];
           // Vérifier le doublon avec le mot résolu
+          if (state.guesses.some((g) => g.word === resolvedWord)) {
+            return { ok: false, error: "already_guessed" };
+          }
+        }
+      }
+
+      // Normalisation du pluriel : si le mot se termine par 's' et que la forme
+      // singulière existe dans le vocabulaire, on lui préfère le singulier pour
+      // garantir un score cohérent (ex. 'problématiques' → 'problématique').
+      if (word.endsWith("s")) {
+        const singular = word.slice(0, -1);
+        let singularIdx = model.wordIndex.get(singular);
+        if (singularIdx === undefined) {
+          singularIdx = model.strippedIndex.get(stripAccents(singular));
+        }
+        if (singularIdx !== undefined) {
+          guessIdx = singularIdx;
+          resolvedWord = model.words[singularIdx];
           if (state.guesses.some((g) => g.word === resolvedWord)) {
             return { ok: false, error: "already_guessed" };
           }
